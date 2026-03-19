@@ -147,7 +147,11 @@ class Tracer:
         self._step_index = None
         self._step_type = "standard"
         self._step_tool_calls = []
-
+    
+    @property
+    def has_open_step(self) -> bool:
+        return self._step_start is not None
+    
     # ------------------------------------------------------------------
     # Tool call recording
     # ------------------------------------------------------------------
