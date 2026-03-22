@@ -49,8 +49,25 @@ pip install -e ".[dev]"
 python experiments/run_baseline.py
 ```
 
+## Experiments
+
+Two experiment configurations are included. Each is driven by a YAML config file.
+
+| Experiment | Steps | fail_at_step | Success rate | Avg cost/run |
+|---|---|---|---|---|
+| `baseline` | 8 | none | 100% | $0.0538 |
+| `high_context` | 15 | 10 | 0% | $0.1126 |
+
+The `high_context` experiment illustrates **wasted spend**: the agent burns through 11 steps and $0.11 per run before failing every time. That cost is invisible without instrumentation.
+
+```bash
+python experiments/run_baseline.py
+python experiments/run_high_context.py
+```
+
 ## Sample Output
 
+### baseline — 8 steps, no failure
 ```text
 ============================================================
 AgentScope Profiler  |  Experiment: baseline
@@ -97,6 +114,59 @@ Cost Estimate  (prompt: $0.005/1k  completion: $0.015/1k)
   Avg per run                $0.0538
 ```
 
+### high_context — 15 steps, fails at step 10
+
+```text
+============================================================
+AgentScope Profiler  |  Experiment: high_context
+============================================================
+
+Config
+  prompt_tokens_start : 1024
+  completion_tokens   : 128
+  num_steps           : 15
+  fail_at_step        : 10
+  use_tool_at_step    : 3
+
+  task                : Autonomously debug and patch a multi-file python codebase
+  trials              : 5
+  output              : experiments\traces
+
+------------------------------------------------------------
+Run Summary  (5 trials)
+------------------------------------------------------------
+  Success rate               0.0%
+  Avg tokens / run           19712
+    Avg prompt tokens        18304
+    Avg completion tokens    1408
+  Avg steps / run            11.0
+  Avg duration               114 ms
+  Avg retries / run          0.00
+  Avg tool calls / run       1.00
+
+------------------------------------------------------------
+Context Growth  (avg prompt tokens per step)
+------------------------------------------------------------
+  Step 0      1024 tokens  █████████░░░░░░░░░░░  (5 runs)
+  Step 1      1152 tokens  ██████████░░░░░░░░░░  (5 runs)
+  Step 2      1280 tokens  ███████████░░░░░░░░░  (5 runs)
+  Step 3      1408 tokens  ████████████░░░░░░░░  (5 runs)
+  Step 4      1536 tokens  █████████████░░░░░░░  (5 runs)
+  Step 5      1664 tokens  ██████████████░░░░░░  (5 runs)
+  Step 6      1792 tokens  ████████████████░░░░  (5 runs)
+  Step 7      1920 tokens  █████████████████░░░  (5 runs)
+  Step 8      2048 tokens  ██████████████████░░  (5 runs)
+  Step 9      2176 tokens  ███████████████████░  (5 runs)
+  Step 10     2304 tokens  ████████████████████  (5 runs)
+
+------------------------------------------------------------
+Cost Estimate  (prompt: $0.005/1k  completion: $0.015/1k)
+------------------------------------------------------------
+  Total (5 runs)             $0.5632
+  Avg per run                $0.1126
+  Note                       all runs failed at step 10; cost above is wasted spend
+```
+
 ## Running Tests
 
 ```bash
@@ -121,9 +191,11 @@ agentscope/
     json_exporter.py # save/load traces as JSON files
 experiments/
   configs/
-    baseline.yaml    # experiment parameters
-  traces/            # output directory (gitignored)
-  run_baseline.py    # end-to-end experiment script
+    baseline.yaml       # 8-step, no failure
+    high_context.yaml   # 15-step, fails at step 10
+  traces/               # output directory (gitignored)
+  run_baseline.py       # baseline experiment script
+  run_high_context.py   # high-context failure experiment script
 tests/
   test_schema.py
   test_tracer.py
@@ -133,8 +205,6 @@ tests/
 ```
 
 ## Planned Extensions
-- Second experiment config: long-horizon run with failure injection to compare
-cost and reliability across configurations
 - Go REST API: serve trace data over HTTP so analysis can be queried rather
 than run as a CLI script
 - Real LLM provider: OpenAI provider implementation behind the BaseAgent

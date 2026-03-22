@@ -1,22 +1,22 @@
 """
-experiments/run_baseline.py - End-to-end experiment script
+experiments/run_high_context.py - High-context failure experiment
 
-Runs the SyntheticAgent for N trials, saves traces to disk,
-then loads and analyzes them using the analysis module.
+Runs a 15-step SyntheticAgent that fails at step 10 with a larger
+starting context window. Demonstrates token cost accrued before failure
 
-Run from the project root:
-    python experiments/run_baseline.py
+Run from project root:
+    python experiments/run_high_context.py
 """
 
 from pathlib import Path
-
-import yaml
 
 from agentscope.agents.synthetic_agent import SyntheticAgent
 from agentscope import analysis
 from agentscope.runner import run_experiment
 
-CONFIG_FILE = Path("experiments/configs/baseline.yaml")
+import yaml
+
+CONFIG_FILE = Path("experiments/configs/high_context.yaml")
 
 with open(CONFIG_FILE) as f:
     cfg = yaml.safe_load(f)
@@ -28,6 +28,14 @@ TRACES_DIR = Path("experiments/traces")
 CONFIG = cfg["agent"]
 PROMPT_PRICE_PER_1K = cfg["pricing"]["prompt_price_per_1k"]
 COMPLETION_PRICE_PER_1K = cfg["pricing"]["completion_price_per_1k"]
+
+agent = SyntheticAgent(
+    num_steps=CONFIG["num_steps"],
+    use_tool_at_step=CONFIG["use_tool_at_step"],
+    fail_at_step=CONFIG["fail_at_step"],
+    prompt_tokens_start=CONFIG["prompt_tokens_start"],
+    completion_tokens=CONFIG["completion_tokens"],
+)
 
 # Helpers
 
@@ -61,6 +69,8 @@ def main() -> None:
         num_steps=CONFIG["num_steps"],
         use_tool_at_step=CONFIG["use_tool_at_step"],
         fail_at_step=CONFIG["fail_at_step"],
+        prompt_tokens_start=CONFIG["prompt_tokens_start"],
+        completion_tokens=CONFIG["completion_tokens"],
     )
 
     section("Running trials")
